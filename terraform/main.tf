@@ -7,7 +7,7 @@ data "google_client_config" "current" {
 }
 
 resource "google_container_cluster" "default" {
-    name = "my_first_cluster"
+    name = "my-first-cluster"
     location = var.region
     initial_node_count = 3
     min_master_version = data.google_container_engine_versions.default.latest_master_version
