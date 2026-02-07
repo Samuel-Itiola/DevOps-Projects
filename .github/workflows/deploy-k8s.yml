@@ -36,6 +36,14 @@ jobs:
       - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Enable required GCP APIs
+        run: |
+          gcloud services enable compute.googleapis.com --project="${{ env.GCP_PROJECT_ID }}"
+          gcloud services enable container.googleapis.com --project="${{ env.GCP_PROJECT_ID }}"
+          gcloud services enable artifactregistry.googleapis.com --project="${{ env.GCP_PROJECT_ID }}"
+          echo "Waiting for API enablement to propagate..."
+          sleep 30
+
       - name: Ensure Artifact Registry repository exists
         run: |
           gcloud artifacts repositories describe "${{ env.AR_REPO }}" \
