@@ -3,6 +3,7 @@ on:
   push:
     branches:
       - main
+      - "Complete-CI-CD-with-Terraform-GKE"
       - "Complete-CI/CD-with-Terraform-GKE"
   workflow_dispatch:
 env:
