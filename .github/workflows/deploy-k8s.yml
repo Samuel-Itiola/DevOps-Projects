@@ -92,4 +92,10 @@ jobs:
       - name: Terraform apply
         if: github.ref == 'refs/heads/main'
         working-directory: ./terraform
-        run: terraform apply -auto-approve PLAN
+        run: |
+          # Disable deletion protection on existing cluster if it exists
+          gcloud container clusters update my-first-cluster \
+            --project="${{ env.GCP_PROJECT_ID }}" \
+            --region="${{ env.AR_REGION }}" \
+            --no-enable-deletion-protection 2>/dev/null || true
+          terraform apply -auto-approve PLAN
