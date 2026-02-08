@@ -1,1 +1,10 @@
 *node_modules
+
+# Documentation files for personal use
+*.pdf
+*.txt
+RESUME_*.md
+PROJECT_PDF_READY.md
+GITHUB_PORTFOLIO_PROJECT.md
+CONFIGURATION_STATUS.md
+disable-deletion-protection.sh
