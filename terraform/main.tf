@@ -82,7 +82,7 @@ resource "aws_security_group" "miniroup" {
     to_port = 22
   }
   ingress {
-    cidr_blocks = ["0.0.0/0"]
+    cidr_blocks = ["0.0.0.0/0"]
     description = "Allow all inbound traffic"
     from_port = 0
     ipv6_cidr_blocks = []
