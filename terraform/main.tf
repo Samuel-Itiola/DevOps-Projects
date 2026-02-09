@@ -1,8 +1,8 @@
 terraform {
   required_providers {
     aws = {
-      source = "harshicorp/aws"
-      version = "latest"
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
     }
   }
   backend "s3" {
@@ -19,27 +19,48 @@ resource "aws_instance" "server" {
   instance_type = var.instance_type
   key_name      = aws_key_pair.deployer.key_name
   vpc_security_group_ids = [aws_security_group.miniroup.id]
-  iam_instance_profile = aws_iam_instance_profile.ec2-profile.name
+  iam_instance_profile = aws_iam_instance_profile.ec2_profile.name
   tags = {
     Name = var.instance_name
-}
+  }
   connection {
     type = "ssh"
     host = self.public_ip
-    user = "Ubuntu"
+    user = "ubuntu"
     private_key = var.private_key
-    timeout = "4"
+    timeout = "4m"
   }
 }
 
-resource "aws_instance_group" "ec2-profile" {
+resource "aws_iam_role" "ec2_role" {
+  name = "ec2-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "sts:AssumeRole"
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_instance_profile" "ec2_profile" {
   name = "ec2-profile"
-  role = "Ecr_Auth"
+  role = aws_iam_role.ec2_role.name
+}
+
+resource "aws_iam_role_policy_attachment" "ecr_readonly" {
+  role       = aws_iam_role.ec2_role.name
+  policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 resource "aws_security_group" "miniroup" {
-  egress{
-    cidr_blocks = ["0.000.0/0"]
+  egress {
+    cidr_blocks = ["0.0.0.0/0"]
     description = "Allow all outbound traffic"
     from_port = 0
     ipv6_cidr_blocks = []
@@ -60,7 +81,7 @@ resource "aws_security_group" "miniroup" {
     self = false
     to_port = 22
   }
-  {
+  ingress {
     cidr_blocks = ["0.0.0/0"]
     description = "Allow all inbound traffic"
     from_port = 0
