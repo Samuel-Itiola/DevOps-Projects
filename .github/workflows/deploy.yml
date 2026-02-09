@@ -14,6 +14,8 @@ env:
 jobs:
   deploy-infra:
     runs-on: ubuntu-latest
+    outputs:
+      ServerIP: ${{ steps.set_ip.outputs.instance_ip }}
     defaults:
       run:
         working-directory: ./terraform
@@ -39,3 +41,46 @@ jobs:
       - name: Terraform Apply
         id: apply
         run: terraform apply -auto-approve PLAN
+      - name: Set output
+        id: set_ip
+        run: echo "instance_ip=$(terraform output -raw instance_public_ip)" >> "$GITHUB_OUTPUT"
+  deploy-app:
+    runs-on: ubuntu-latest
+    needs: deploy-infra
+    steps:
+      - name: checkout
+        uses: actions/checkout@v2
+      - name: Set Ip env variable for next steps
+        run: echo "SERVER_IP=${{ needs.deploy-infra.outputs.ServerIP }}"  >> $GITHUB_ENV
+      - name: Login to AWS ECR
+        id: ecr-login
+        uses: aws-actions/amazon-ecr-login@v1
+      - name: Build and Push Docker Image
+        env:
+          ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          ECR_REPOSITORY: example-node-app
+          IMAGE_TAG: ${{ github.sha }}
+        working-directory: ./nodeapp
+        run: |-
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+      - name: Deploy to EC2
+        env:
+          REGISTRY: ${{ steps.ecr-login.outputs.registry }}
+          REPOSITORY: example-node-app
+          IMAGE_TAG: ${{ github.sha }}
+          AWS_REGION: ${{ env.AWS_REGION }}
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ env.SERVER_IP }}
+          username: ubuntu
+          key: ${{ env.PRIVATE_SSH_KEY }}
+          envs: PRIVATE_SSH_KEY,REGISTRY,REPOSITORY,IMAGE_TAG,AWS_REGION,AWS_ACCESS_KEY_ID,AWS_SECRET_ACCESS_KEY
+          script: |
+            sudo apt-get update
+            sudo apt-get install -y docker.io awscli
+            sudo aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY
+            sudo docker stop example-node-app || true
+            sudo docker rm example-node-app || true
+            sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
+            sudo docker run -d -p 80:8080 --name example-node-app $REGISTRY/$REPOSITORY:$IMAGE_TAG
