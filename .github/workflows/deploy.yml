@@ -31,6 +31,7 @@ jobs:
         run: |-
           terraform plan \
             -var "region=${{ env.AWS_REGION }}" \
+            -var "ami=ami-018ff7ece22bf96db" \
             -var "public_key=${{ env.PUBLIC_SSH_KEY }}" \
             -var "private_key=${{ env.PRIVATE_SSH_KEY }}" \
             -var "key_name=deployer-key" \
