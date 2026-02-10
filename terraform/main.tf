@@ -99,6 +99,14 @@ resource "aws_key_pair" "deployer" {
   public_key = var.public_key
 }
 
+resource "aws_ecr_repository" "node_app" {
+  name                 = "node_app"
+  image_tag_mutability = "MUTABLE"
+  image_scanning_configuration {
+    scan_on_push = true
+  }
+}
+
 output "instance_public_ip" {
   value = aws_instance.server.public_ip
   sensitive = true

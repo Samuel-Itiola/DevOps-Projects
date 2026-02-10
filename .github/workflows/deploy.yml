@@ -58,7 +58,7 @@ jobs:
       - name: Build and Push Docker Image
         env:
           ECR_REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          ECR_REPOSITORY: example-node-app
+          ECR_REPOSITORY: node_app
           IMAGE_TAG: ${{ github.sha }}
         working-directory: ./nodeapp
         run: |-
@@ -67,7 +67,7 @@ jobs:
       - name: Deploy to EC2
         env:
           REGISTRY: ${{ steps.ecr-login.outputs.registry }}
-          REPOSITORY: example-node-app
+          REPOSITORY: node_app
           IMAGE_TAG: ${{ github.sha }}
           AWS_REGION: ${{ env.AWS_REGION }}
         uses: appleboy/ssh-action@master
@@ -80,7 +80,7 @@ jobs:
             sudo apt-get update
             sudo apt-get install -y docker.io awscli
             sudo aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY
-            sudo docker stop example-node-app || true
-            sudo docker rm example-node-app || true
+            sudo docker stop node_app || true
+            sudo docker rm node_app || true
             sudo docker pull $REGISTRY/$REPOSITORY:$IMAGE_TAG
-            sudo docker run -d -p 80:8080 --name example-node-app $REGISTRY/$REPOSITORY:$IMAGE_TAG
+            sudo docker run -d -p 80:8080 --name node_app $REGISTRY/$REPOSITORY:$IMAGE_TAG
